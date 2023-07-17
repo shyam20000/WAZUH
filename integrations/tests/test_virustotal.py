@@ -12,13 +12,8 @@ import sys
 import requests
 from socket import socket, AF_UNIX, SOCK_DGRAM
 import virustotal as virustotal
-from unittest.mock import patch, mock_open
-
-# Exit error codes
-ERR_NO_APIKEY           = 1
-ERR_BAD_ARGUMENTS       = 2
-ERR_FILE_NOT_FOUND      = 6
-ERR_INVALID_JSON        = 7
+import logging
+from unittest.mock import patch, mock_open, MagicMock
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..')) #Necessary to run PyTest
 
@@ -114,14 +109,15 @@ alert_output = {
     "integration": "virustotal"
 }
 
-sys_args_template = ['/var/ossec/integrations/virustotal.py', '/tmp/virustotal-XXXXXX-XXXXXXX.alert', f'{apikey_virustotal}', '', '>/dev/null 2>&1']
+alerts_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/alerts.json')
+sys_args_template = ['/var/ossec/integrations/virustotal.py', alerts_file, apikey_virustotal, '']
 
 
 def test_main_bad_arguments_exit():
     """Test that main function exits when wrong number of arguments are passed."""
     with patch("virustotal.open", mock_open()), pytest.raises(SystemExit) as pytest_wrapped_e:
         virustotal.main(sys_args_template[0:2])
-    assert pytest_wrapped_e.value.code == ERR_BAD_ARGUMENTS
+    assert pytest_wrapped_e.value.code == virustotal.ERR_INVALID_ARGUMENTS
 
 def test_main_exception():
     """Test exception handling in main when process_args raises an exception."""
@@ -137,8 +133,8 @@ def test_main():
         process.assert_called_once_with(sys_args_template)
 
 @pytest.mark.parametrize('side_effect, return_value', [
-    (FileNotFoundError, ERR_FILE_NOT_FOUND),
-    (json.decoder.JSONDecodeError("Expecting value", "", 0), ERR_INVALID_JSON)
+    (FileNotFoundError, virustotal.ERR_FILE_NOT_FOUND),
+    (json.decoder.JSONDecodeError("Expecting value", "", 0), virustotal.ERR_INVALID_JSON)
 ])
 def test_process_args_exit(side_effect, return_value):
     """Test the process_args function exit codes.
@@ -162,35 +158,25 @@ def test_process_args():
     with patch("virustotal.open", mock_open()), \
             patch('virustotal.get_json_alert') as alert_load,\
             patch('virustotal.send_msg') as send_msg, \
-            patch('virustotal.request_virustotal_info', return_value=msg_template) as request_virustotal_info, \
+            patch('virustotal.generate_msg', return_value=msg_template) as generate_msg, \
             patch('requests.post', return_value=requests.Response):
         alert_load.return_value = alert_template
         virustotal.process_args(sys_args_template)
-        request_virustotal_info.assert_called_once_with(alert_template,sys_args_template[2])
-        generated_msg = virustotal.request_virustotal_info(alert_template,sys_args_template[2])
-        assert generated_msg==msg_template
-        send_msg.assert_called_once_with(msg_template,msg_template['agent'])
+        generate_msg.assert_called_once_with(alert_template, sys_args_template[2])
+        generated_msg = virustotal.generate_msg(alert_template, sys_args_template[2])
+        assert generated_msg == msg_template
+        send_msg.assert_called_once_with(msg_template, msg_template['agent'])
 
 def test_process_args_not_sending_message():
-    """Test that the send_msg function is not executed due to empty message after request_virustotal_info."""
+    """Test that the send_msg function is not executed due to empty message after generate_msg."""
     with patch("virustotal.open", mock_open()), \
             patch('virustotal.get_json_alert') as alert_load,\
             patch('virustotal.send_msg') as send_msg, \
-            patch('virustotal.request_virustotal_info', return_value=''), \
+            patch('virustotal.generate_msg', return_value=''), \
             pytest.raises(Exception):
         alert_load.return_value = alert_template
         virustotal.process_args(sys_args_template)
         send_msg.assert_not_called()
-
-def test_debug():
-    """Test the correct execution of the debug function, writing the expected log when debug mode enabled."""
-    with patch('virustotal.debug_enabled', return_value=True), \
-            patch("virustotal.open", mock_open()) as open_mock, \
-            patch('virustotal.LOG_FILE', return_value='integrations.log') as log_file:
-        virustotal.debug(msg_template)
-        open_mock.assert_called_with(log_file, 'a')
-        open_mock().write.assert_called_with(msg_template)
-
 
 def test_send_msg_raise_exception():
     """Test that the send_msg function will raise an exception when passed the wrong webhook url."""
@@ -198,10 +184,8 @@ def test_send_msg_raise_exception():
         pytest.raises(SystemExit):
         virustotal.send_msg(msg_template,msg_template['agent'])
 
-
 def test_send_msg():
     """Test that the send_msg function works as expected."""
-    headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
     with patch('virustotal.SOCKET_ADDR',"./socket.sock"):
         with socket(AF_UNIX, SOCK_DGRAM) as s:
             s.bind("./socket.sock")
@@ -210,64 +194,36 @@ def test_send_msg():
             assert data[0].decode() != None
             s.close()
         os.remove('./socket.sock')
-def test_request_virustotal_info_md5_after_check_fail_1():
-    """Test that the md5_after field from alerts are valid md5 hash."""
-    with patch('virustotal.debug') as debug:
-        response = virustotal.request_virustotal_info(alert_template_md5[0],apikey_virustotal)
-        debug.assert_called_once_with("# md5_after field in the alert is not a md5 hash checksum")
-        assert response == None
 
-def test_request_virustotal_info_md5_after_check_fail_2():
+def test_generate_msg_md5_after_check_fails():
     """Test that the md5_after field from alerts are valid md5 hash."""
-    with patch('virustotal.debug') as debug:
-        response = virustotal.request_virustotal_info(alert_template_md5[1],apikey_virustotal)
-        debug.assert_called_once_with("# md5_after field in the alert is not a md5 hash checksum")
-        assert response == None
+    expected_exception = 'md5_after field in the alert is not a md5 hash checksum'
+    for alert in alert_template_md5[:7]:
+        with pytest.raises(Exception, match=expected_exception):
+            virustotal.generate_msg(alert, apikey_virustotal)
 
-def test_request_virustotal_info_md5_after_check_fail_3():
+def test_generate_msg_md5_after_check_ok():
     """Test that the md5_after field from alerts are valid md5 hash."""
-    with patch('virustotal.debug') as debug:
-        response = virustotal.request_virustotal_info(alert_template_md5[2],apikey_virustotal)
-        debug.assert_called_once_with("# md5_after field in the alert is not a md5 hash checksum")
-        assert response == None
-
-def test_request_virustotal_info_md5_after_check_fail_4():
-    """Test that the md5_after field from alerts are valid md5 hash."""
-    with patch('virustotal.debug') as debug:
-        response = virustotal.request_virustotal_info(alert_template_md5[3],apikey_virustotal)
-        debug.assert_called_once_with("# md5_after field in the alert is not a md5 hash checksum")
-        assert response == None
-
-def test_request_virustotal_info_md5_after_check_fail_5():
-    """Test that the md5_after field from alerts are valid md5 hash."""
-    with patch('virustotal.debug') as debug:
-        response = virustotal.request_virustotal_info(alert_template_md5[4],apikey_virustotal)
-        debug.assert_called_once_with("# md5_after field in the alert is not a md5 hash checksum")
-        assert response == None
-
-def test_request_virustotal_info_md5_after_check_fail_6():
-    """Test that the md5_after field from alerts are valid md5 hash."""
-    with patch('virustotal.debug') as debug:
-        response = virustotal.request_virustotal_info(alert_template_md5[5],apikey_virustotal)
-        debug.assert_called_once_with("# md5_after field in the alert is not a md5 hash checksum")
-        assert response == None
-
-def test_request_virustotal_info_md5_after_check_fail_7():
-    """Test that the md5_after field from alerts are valid md5 hash."""
-    with patch('virustotal.debug') as debug:
-        response = virustotal.request_virustotal_info(alert_template_md5[6],apikey_virustotal)
-        debug.assert_called_once_with("# md5_after field in the alert is not a md5 hash checksum")
-        assert response == None
-
-def test_request_virustotal_info_md5_after_check_fail_8():
-    """Test that the md5_after field from alerts are valid md5 hash."""
-    with patch('virustotal.debug') as debug:
-        response = virustotal.request_virustotal_info(alert_template_md5[7],apikey_virustotal)
-        debug.assert_called_once_with("# md5_after field in the alert is not a md5 hash checksum")
-        assert response == None
-
-def test_request_virustotal_info_md5_after_check_ok():
-    """Test that the md5_after field from alerts are valid md5 hash."""
-    with patch('virustotal.query_api'), patch('virustotal.in_database', return_value=False), patch('virustotal.debug') as debug:
-        response = virustotal.request_virustotal_info(alert_template_md5[8],apikey_virustotal)
+    with patch('virustotal.query_api'), patch('virustotal.in_database', return_value=False):
+        response = virustotal.generate_msg(alert_template_md5[8],apikey_virustotal)
         assert response == alert_output
+
+def test_logger(caplog):
+    """Test the correct execution of the logger."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    with patch('requests.post', return_value=mock_response), patch('virustotal.send_msg'), patch('virustotal.generate_msg'):
+        with caplog.at_level(logging.DEBUG, logger='virustotal'):
+            args = sys_args_template[:]
+            args.append('info')
+            virustotal.main(args)
+
+    # Assert console log correctness
+    assert caplog.records[0].message == 'Running VirusTotal script'
+    assert caplog.records[1].message == f'Alerts file location: {sys_args_template[1]}'
+    assert caplog.records[2].message == f'Processing alert with ID alert_id'
+    assert caplog.records[-1].levelname == 'INFO'
+    assert "DEBUG" not in caplog.text
+    # Assert the log file is created and is not empty
+    assert os.path.exists(virustotal.LOG_FILE)
+    assert os.path.getsize(virustotal.LOG_FILE) > 0
