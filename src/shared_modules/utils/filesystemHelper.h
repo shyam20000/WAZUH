@@ -72,64 +72,6 @@ namespace Utils
         return ret;
     }
 
-    static std::vector<std::string> enumerateDirTypeDir(const std::string& path)
-    {
-        std::vector<std::string> ret;
-        std::unique_ptr<DIR, DirSmartDeleter> spDir{opendir(path.c_str())};
-
-        if (spDir)
-        {
-            auto entry{readdir(spDir.get())};
-
-            while (entry)
-            {
-#if defined(WIN32) || defined(SOLARIS)
-                std::string entryPath { path + "/" + entry->d_name };
-
-                if (existsDir(entryPath))
-#else
-                if (entry->d_type == DT_DIR)
-#endif
-                {
-                    ret.push_back(entry->d_name);
-                }
-
-                entry = readdir(spDir.get());
-            }
-        }
-
-        return ret;
-    }
-
-    static std::vector<std::string> enumerateDirTypeRegular(const std::string& path)
-    {
-        std::vector<std::string> ret;
-        std::unique_ptr<DIR, DirSmartDeleter> spDir{opendir(path.c_str())};
-
-        if (spDir)
-        {
-            auto entry{readdir(spDir.get())};
-
-            while (entry)
-            {
-#if defined(WIN32) || defined(SOLARIS)
-                std::string entryPath { path + "/" + entry->d_name };
-
-                if (existsRegular(entryPath))
-#else
-                if (entry->d_type == DT_REG)
-#endif
-                {
-                    ret.push_back(entry->d_name);
-                }
-
-                entry = readdir(spDir.get());
-            }
-        }
-
-        return ret;
-    }
-
     static std::string getFileContent(const std::string& filePath)
     {
         std::stringstream content;
