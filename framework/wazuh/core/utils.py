@@ -1801,8 +1801,7 @@ class WazuhDBQuery(object):
 
     def _default_count_query(self):
         return "SELECT COUNT(*) FROM ({0})"
-
-    
+ 
     @staticmethod
     def _pass_filter(field, value):
         # field is used by child classes containing a field that may have a value equal to 'all'
