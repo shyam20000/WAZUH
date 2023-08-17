@@ -1214,8 +1214,8 @@ def test_WazuhDBQuery_protected_add_filters_to_query(mock_process, mock_socket_c
             {'value': 'default2', 'operator': '=', 'field': 'group$0', 'separator': 'OR', 'level': 2},
             {'value': 'default3', 'operator': '=', 'field': 'group$1', 'separator': '', 'level': 0}
         ],
-        'SELECT {0} FROM agent WHERE (id != :id$0 COLLATE NOCASE) AND ((status = :status$0 COLLATE ' + \
-        'NOCASE) AND (group = :group$0 COLLATE NOCASE) OR (group = :group$1 COLLATE NOCASE))  ',
+        'SELECT {0} FROM agent WHERE (id != :id$0 COLLATE NOCASE) AND (((status = :status$0 COLLATE ' + \
+        'NOCASE) AND ((group = :group$0 COLLATE NOCASE) OR (group = :group$1 COLLATE NOCASE)))  ',
     ),
     (
         [
@@ -1224,8 +1224,8 @@ def test_WazuhDBQuery_protected_add_filters_to_query(mock_process, mock_socket_c
             {'value': '000', 'operator': '!=', 'field': 'id$0', 'separator': 'AND', 'level': 0},
             {'value': 'active', 'operator': '=', 'field': 'status$0', 'separator': '', 'level': 0}
         ],
-        'SELECT {0} FROM agent WHERE ((group = :group$0 COLLATE NOCASE) OR (group = :group$1 COLLATE ' + \
-        'NOCASE) AND (id != :id$0 COLLATE NOCASE)) AND (status = :status$0 COLLATE NOCASE)  ', 
+        'SELECT {0} FROM agent WHERE (((group = :group$0 COLLATE NOCASE) OR (group = :group$1 COLLATE ' + \
+        'NOCASE)) AND (id != :id$0 COLLATE NOCASE)) AND (status = :status$0 COLLATE NOCASE)  ',
     ),
     (
         [
@@ -1235,10 +1235,17 @@ def test_WazuhDBQuery_protected_add_filters_to_query(mock_process, mock_socket_c
             {'value': '000', 'operator': '!=', 'field': 'id$1', 'separator': 'AND', 'level': 0},
             {'value': 'active', 'operator': '=', 'field': 'status$0', 'separator': '', 'level': 0}
         ],
-        'SELECT {0} FROM agent WHERE (((group = :group$0 COLLATE NOCASE) OR (group = :group$1 COLLATE ' + \
-        'NOCASE) OR (id = :id$0 COLLATE NOCASE)) AND (id != :id$1 COLLATE NOCASE)) AND ' + \
-        '(status = :status$0 COLLATE NOCASE)  ', 
-    )
+        'SELECT {0} FROM agent WHERE ((((group = :group$0 COLLATE NOCASE) OR (group = :group$1 COLLATE ' + \
+        'NOCASE)) OR (id = :id$0 COLLATE NOCASE)) AND (id != :id$1 COLLATE NOCASE)) AND ' + \
+        '(status = :status$0 COLLATE NOCASE)  ',
+    ),
+    (
+        [
+            {'value': 'default2', 'operator': '=', 'field': 'group$0', 'separator': 'OR', 'level': 1},
+            {'value': 'default3', 'operator': '=', 'field': 'group$1', 'separator': '', 'level': 0},
+        ],
+        'SELECT {0} FROM agent WHERE ((group = :group$0 COLLATE NOCASE) OR (group = :group$1 COLLATE NOCASE))  ',
+    ),
 ])
 @patch('wazuh.core.utils.WazuhDBBackend.connect_to_db')
 @patch('wazuh.core.utils.path.exists', return_value=True)
@@ -1252,7 +1259,6 @@ def test_WazuhDBQuery_protected_add_filters_to_query_final_query(mock_conn_db, m
 
     query.query_filters = filters
     query._add_filters_to_query()
-    print(query.query)
 
     assert query.query == expected_query
 

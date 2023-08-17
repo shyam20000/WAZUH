@@ -1642,19 +1642,17 @@ class WazuhDBQuery(object):
             level = q_filter['level']
 
             repeat_open = max_level - curr_level
+            if curr_level < level:
+                repeat_open += 1
             self.query += '(' * repeat_open if level != 0 and repeat_open != 0 else '('
 
             self._process_filter(field_name, field_filter, q_filter)
 
             repeat_close = 1
             if curr_level > level:
-                repeat_close = curr_level - level
-                # Special case where the level difference is one but we should use two parentheses
-                if repeat_close == 1 and curr_level != max_level:
-                    repeat_close += 1
+                repeat_close = curr_level + 1 - level
             
             self.query += ')' * repeat_close
-
             self.query += ' {} '.format(q_filter['separator'])
             curr_level = level
 
