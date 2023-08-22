@@ -56,7 +56,6 @@ WEBHOOK = 'https://www.virustotal.com/vtapi/v2/file/report'
 def main(args):
     try:
         # Read arguments
-        invalid_arguments: bool = False
         if len(args) >= 4:
             msg = '{0} {1} {2} {3} {4}'.format(
                 args[1],
@@ -66,9 +65,6 @@ def main(args):
                 args[5] if len(sys.argv) > 5 else ''
             )
         else:
-            invalid_arguments = True
-
-        if invalid_arguments:
             print_help_msg()
             sys.exit(ERR_INVALID_ARGUMENTS)
         
@@ -89,13 +85,12 @@ def main(args):
 
 
 def process_args(args) -> None:
-    """This is the core function, creates a message with all valid fields
-    and overwrite or add with the optional fields
+    """Create a message with all valid fields and overwrite or add the optional fields.
 
     Parameters
     ----------
     args : list[str]
-        The argument list from main call
+        The argument list from main call.
     """
     # Read args
     alert_file_location: str     = args[ALERT_INDEX]
@@ -114,7 +109,7 @@ def process_args(args) -> None:
     send_msg(msg, json_alert['agent'])
 
 def generate_msg(alert: any, apikey: str):
-    """Generate the JSON object with the message to be send
+    """Generate the JSON object with the message to be sent.
 
     Parameters
     ----------
@@ -124,7 +119,7 @@ def generate_msg(alert: any, apikey: str):
     Returns
     -------
     msg: str
-        The JSON message to send
+        The JSON message to send.
     """
     logger.info("Generating message")
 
@@ -180,19 +175,19 @@ def in_database(data, hash):
     return True
 
 def query_api(hash: str, apikey: str) -> any:
-    """Send a request to VT API and fetch information to build message
+    """Send a request to VT API and fetch information to build message.
 
     Parameters
     ----------
     hash : str
-        Hash need it for parameters
+        Hash needed for the parameters.
     apikey: str
-        Authentication API
+        Authentication API.
 
     Returns
     -------
     data: any
-        JSON with the response
+        JSON with the response.
 
     Raises
     ------
@@ -252,7 +247,7 @@ def send_msg(msg: any, agent:any = None) -> None:
         sys.exit(ERR_SOCKET_OPERATION)
 
 def get_json_alert(file_location: str) -> any:
-    """Read JSON alert object from file
+    """Read JSON alert object from file.
 
     Parameters
     ----------
@@ -282,28 +277,37 @@ def get_json_alert(file_location: str) -> any:
         sys.exit(ERR_INVALID_JSON)
 
 def print_help_msg():
-    help_msg = '''Exiting: Invalid arguments.
-    
-Usage:
-    virustotal <alerts_file> [api_key] <webhook_url> [logging_level] [options_file]
-Arguments:
-    alerts_file (required)
-        Path to the JSON file containing the alerts.
-    api_key (required)
-        Virus total API key.
-    webhook_url (not required)
-        The webhook URL argument is not needed for the Virus total integration. However, it's still considered because the 
-        integrator executes all scripts with the same arguments.
-        If you are executing the script manually, please put anything in that argument.
-    logging_level (optional)
-        Used to define how much information should be logged. Default is INFO.
-        Levels: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL.
-    options_file (optional)
-        Path to a file containing custom variables to be used in the integration. It must be JSON-encoded.
+    """Send the command's help message to the standard output."""
+    help_msg = '''
+    Exiting: Invalid arguments.
+
+    Usage:
+        virustotal <alerts_file> [api_key] <webhook_url> [logging_level] [options_file]
+    Arguments:
+        alerts_file (required)
+            Path to the JSON file containing the alerts.
+        api_key (required)
+            Virus total API key.
+        webhook_url (not required)
+            The webhook URL argument is not needed for the Virus total integration. However, it's still considered because the 
+            integrator executes all scripts with the same arguments.
+            If you are executing the script manually, please put anything in that argument.
+        logging_level (optional)
+            Used to define how much information should be logged. Default is INFO.
+            Levels: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL.
+        options_file (optional)
+            Path to a file containing custom variables to be used in the integration. It must be JSON-encoded.
     '''
     print(help_msg)
 
 def setup_logger(args):
+    """Configure the logger.
+
+    Parameters
+    ----------
+    args: any
+        Command arguments.
+    """
     # Create log file directories if they do not exist
     log_file_dir = os.path.dirname(LOG_FILE)
     if not os.path.exists(log_file_dir):

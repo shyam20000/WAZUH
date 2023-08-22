@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 # Exit error codes
 ERR_NO_REQUEST_MODULE   = 1
-ERR_INVALID_ARGUMENTS       = 2
+ERR_INVALID_ARGUMENTS   = 2
 ERR_FILE_NOT_FOUND      = 6
 ERR_INVALID_JSON        = 7
 
@@ -50,7 +50,6 @@ WEBHOOK_INDEX   = 3
 def main(args):
     try:
         # Read arguments
-        invalid_arguments: bool = False
         if len(args) >= 4:
             msg = '{0} {1} {2} {3} {4}'.format(
                 args[1],
@@ -60,9 +59,6 @@ def main(args):
                 args[5] if len(sys.argv) > 5 else ''
             )
         else:
-            invalid_arguments = True
-
-        if invalid_arguments:
             print_help_msg()
             sys.exit(ERR_INVALID_ARGUMENTS)
         
@@ -88,13 +84,12 @@ def main(args):
 
 
 def process_args(args) -> None:
-    """This is the core function, creates a message with all valid fields
-    and overwrite or add with the optional fields
+    """Create a message with all valid fields and overwrite or add the optional fields.
 
     Parameters
     ----------
     args : list[str]
-        The argument list from main call
+        The argument list from main call.
     """
     # Read args
     alert_file_location: str     = args[ALERT_INDEX]
@@ -130,7 +125,7 @@ def process_args(args) -> None:
     send_msg(msg, webhook)
 
 def generate_msg(alert: any, options: any) -> any:
-    """Generate the JSON object with the message to be send
+    """Generate the JSON object with the message to be sent.
 
     Parameters
     ----------
@@ -142,7 +137,7 @@ def generate_msg(alert: any, options: any) -> any:
     Returns
     -------
     msg: str
-        The JSON message to send
+        The JSON message to send.
     """
     logger.info("Generating message")
 
@@ -191,7 +186,7 @@ def generate_msg(alert: any, options: any) -> any:
     return json_msg
 
 def send_msg(msg: str, url: str) -> None:
-    """Send the message to the API
+    """Send the message to the API.
 
     Parameters
     ----------
@@ -213,7 +208,7 @@ def send_msg(msg: str, url: str) -> None:
                  res.headers["date"], res.status_code, res.url, res.headers["x-slack-unique-id"])
 
 def get_json_alert(file_location: str) -> any:
-    """Read JSON alert object from file
+    """Read JSON alert object from file.
 
     Parameters
     ----------
@@ -243,7 +238,7 @@ def get_json_alert(file_location: str) -> any:
         sys.exit(ERR_INVALID_JSON)
 
 def get_json_options(file_location: str) -> any:
-    """Read JSON options object from file
+    """Read JSON options object from file.
 
     Parameters
     ----------
@@ -258,7 +253,7 @@ def get_json_options(file_location: str) -> any:
     Raises
     ------
     JSONDecodeError
-        If no valid JSON file is used
+        If no valid JSON file is used.
     """
     try:
         with open(file_location, encoding='utf-8') as options_file:
@@ -270,36 +265,58 @@ def get_json_options(file_location: str) -> any:
         sys.exit(ERR_INVALID_JSON)
 
 def print_help_msg():
-    help_msg = '''Exiting: Invalid arguments.
-    
-Usage:
-    slack <alerts_file> [api_key] <webhook_url> [logging_level] [options_file]
-Arguments:
-    alerts_file (required)
-        Path to the JSON file containing the alerts.
-    api_key (not required)
-        The API key argument is not needed for the Slack integration. However, it's still considered because the 
-        integrator executes all scripts with the same arguments.
-        If you are executing the script manually, please put anything in that argument.
-    webhook_url (required)
-        Slack webhook URL where the messages will be sent to.
-    logging_level (optional)
-        Used to define how much information should be logged. Default is INFO.
-        Levels: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL.
-    options_file (optional)
-        Path to a file containing custom variables to be used in the integration. It must be JSON-encoded.
+    """Send the command's help message to the standard output."""
+    help_msg = '''
+    Exiting: Invalid arguments.
+
+    Usage:
+        slack <alerts_file> [api_key] <webhook_url> [logging_level] [options_file]
+    Arguments:
+        alerts_file (required)
+            Path to the JSON file containing the alerts.
+        api_key (not required)
+            The API key argument is not needed for the Slack integration. However, it's still considered because the 
+            integrator executes all scripts with the same arguments.
+            If you are executing the script manually, please put anything in that argument.
+        webhook_url (required)
+            Slack webhook URL where the messages will be sent to.
+        logging_level (optional)
+            Used to define how much information should be logged. Default is INFO.
+            Levels: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL.
+        options_file (optional)
+            Path to a file containing custom variables to be used in the integration. It must be JSON-encoded.
     '''
     print(help_msg)
 
 
 def is_valid_url(url: str) -> bool:
+    """Validate a URL.
+
+    Parameters
+    ----------
+    url: str
+        Integration URL.
+
+    Returns
+    -------
+    bool
+        Whether the URL is valid or not.
+    """
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
 
+
 def setup_logger(args):
+    """Configure the logger.
+
+    Parameters
+    ----------
+    args: any
+        Command arguments.
+    """
     # Create log file directories if they do not exist
     log_file_dir = os.path.dirname(LOG_FILE)
     if not os.path.exists(log_file_dir):

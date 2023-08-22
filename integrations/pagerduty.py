@@ -81,13 +81,12 @@ def main(args):
         raise
 
 def process_args(args) -> None:
-    """This is the core function, creates a message with all valid fields
-    and overwrite or add with the optional fields
+    """Create a message with all valid fields and overwrite or add the optional fields.
 
     Parameters
     ----------
     args : list[str]
-        The argument list from main call
+        The argument list from main call.
     """
     # Read args
     alert_file_location: str    = args[ALERT_INDEX]
@@ -119,7 +118,7 @@ def process_args(args) -> None:
     send_msg(msg)
 
 def generate_msg(alert: any, options: any, apikey: str) -> str:
-    """Generate the JSON object with the message to be send
+    """Generate the JSON object with the message to be sent.
 
     Parameters
     ----------
@@ -131,7 +130,7 @@ def generate_msg(alert: any, options: any, apikey: str) -> str:
     Returns
     -------
     msg: str
-        The JSON message to send
+        The JSON message to send.
     """
     logger.info("Generating message")
 
@@ -172,7 +171,7 @@ def generate_msg(alert: any, options: any, apikey: str) -> str:
     return json_msg
 
 def send_msg(msg: any) -> None:
-    """Send the message to the API
+    """Send the message to the API.
 
     Parameters
     ----------
@@ -193,7 +192,7 @@ def send_msg(msg: any) -> None:
     logger.debug("PagerDuty response: %s", res)
 
 def get_json_alert(file_location: str) -> any:
-    """Read JSON alert object from file
+    """Read JSON alert object from file.
 
     Parameters
     ----------
@@ -250,29 +249,30 @@ def get_json_options(file_location: str) -> any:
         sys.exit(ERR_INVALID_JSON)
 
 def print_help_msg():
-    """Send the command's help message to the standard output"""
-    help_msg = f'''Exiting: Invalid arguments.
-    
-Usage:
-    pagerduty  <alerts_file> <api_key> [webhook_url] [options_file]
-    
-Arguments:
-    alerts_file (required)
-        Path to the JSON file containing the alerts.
-    api_key (required)
-        Pagerduty API key.
-    webhook_url (optional)
-        Pagerduty webhook URL where the messages will be sent to. Default is {WEBHOOK}.
-    logging_level (optional)
-        Used to define how much information should be logged. Default is INFO.
-        Levels: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL.
-    options_file (optional)
-        Path to a file containing custom variables to be used in the integration. It must be JSON-encoded.
+    """Send the command's help message to the standard output."""
+    help_msg = f'''
+    Exiting: Invalid arguments.
+
+    Usage:
+        pagerduty  <alerts_file> <api_key> [webhook_url] [options_file]
+        
+    Arguments:
+        alerts_file (required)
+            Path to the JSON file containing the alerts.
+        api_key (required)
+            Pagerduty API key.
+        webhook_url (optional)
+            Pagerduty webhook URL where the messages will be sent to. Default is {WEBHOOK}.
+        logging_level (optional)
+            Used to define how much information should be logged. Default is INFO.
+            Levels: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL.
+        options_file (optional)
+            Path to a file containing custom variables to be used in the integration. It must be JSON-encoded.
     '''
     print(help_msg)
 
 def setup_logger(args):
-    """Configure the logger
+    """Configure the logger.
 
     Parameters
     ----------
