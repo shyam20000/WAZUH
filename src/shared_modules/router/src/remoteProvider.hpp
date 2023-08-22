@@ -27,6 +27,7 @@ private:
     std::string m_endpointName {};
 
 public:
+    // LCOV_EXCL_START
     explicit RemoteProvider(std::string endpoint, const std::string& socketPath)
         : m_endpointName {std::move(endpoint)}
     {
@@ -37,6 +38,7 @@ public:
             std::make_shared<SocketClient<Socket<OSPrimitives>, EpollWrapper>>(socketPath + m_endpointName);
         m_socketClient->connect([&](const char*, uint32_t, const char*, uint32_t) {});
     }
+    // LCOV_EXCL_STOP
 
     void push(const std::vector<char>& message)
     {

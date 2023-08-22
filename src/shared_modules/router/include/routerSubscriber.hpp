@@ -40,6 +40,8 @@ public:
         , m_isLocal {isLocal}
     {
     }
+
+    // LCOV_EXCL_START
     virtual ~RouterSubscriber()
     {
         try
@@ -51,6 +53,7 @@ public:
             std::cerr << "Error in ~RouterSubscriber()" << std::endl;
         }
     }
+    // LCOV_EXCL_STOP
 
     void subscribe(const std::function<void(const std::vector<char>&)>& callback);
 };
