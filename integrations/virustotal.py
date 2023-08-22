@@ -9,6 +9,7 @@
 import json
 import sys
 import logging
+from logging.handlers import RotatingFileHandler
 from urllib.parse import urlparse
 import os
 import re
@@ -282,7 +283,7 @@ def print_help_msg():
     Exiting: Invalid arguments.
 
     Usage:
-        virustotal <alerts_file> [api_key] <webhook_url> [logging_level] [options_file]
+        virustotal <alerts_file> <api_key> [webhook_url] [logging_level] [options_file]
     Arguments:
         alerts_file (required)
             Path to the JSON file containing the alerts.
@@ -314,7 +315,7 @@ def setup_logger(args):
         os.makedirs(log_file_dir)
 
     consoleHandler = logging.StreamHandler()
-    fileHandler = logging.FileHandler(LOG_FILE)
+    fileHandler = RotatingFileHandler(LOG_FILE, maxBytes=10000000, backupCount=10)
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%a %b %d %H:%M:%S %Z %Y")
     consoleHandler.setFormatter(formatter)
     fileHandler.setFormatter(formatter)

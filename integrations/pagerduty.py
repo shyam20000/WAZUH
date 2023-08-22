@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import logging
+from logging.handlers import RotatingFileHandler
 
 # Exit error codes
 ERR_NO_REQUEST_MODULE   = 1
@@ -59,9 +60,6 @@ def main(args):
                 args[5] if len(sys.argv) > 5 else ''
             )
         else:
-            invalid_arguments = True
-
-        if invalid_arguments:
             print_help_msg()
             sys.exit(ERR_INVALID_ARGUMENTS)
         
@@ -285,7 +283,7 @@ def setup_logger(args):
         os.makedirs(log_file_dir)
 
     consoleHandler = logging.StreamHandler()
-    fileHandler = logging.FileHandler(LOG_FILE)
+    fileHandler = RotatingFileHandler(LOG_FILE, maxBytes=10000000, backupCount=10)
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%a %b %d %H:%M:%S %Z %Y")
     consoleHandler.setFormatter(formatter)
     fileHandler.setFormatter(formatter)
