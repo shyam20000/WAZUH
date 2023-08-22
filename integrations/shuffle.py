@@ -113,7 +113,7 @@ def process_args(args) -> None:
 
     logger.info("Running Shuffle script")
     logger.info("Alerts file location: %s", alert_file_location)
-    logger.info("Webhook: %s", webhook)
+    logger.debug("Webhook: %s", webhook)
 
     # Look for options file location
     for idx in range(4, len(args)):
