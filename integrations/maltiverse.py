@@ -112,8 +112,7 @@ class Maltiverse:
         self.session.headers.update({
             "Accept": "application/json",
             "Authorization": f"Bearer {self.auth_token}",
-        }
-        )
+        })
 
     def ip_get(self, ip_addr: str) -> dict:
         """Request Maltiverse Ipv4 via API.
@@ -310,7 +309,7 @@ def process_args(args: list):
     hook_url: str = args[3]
 
     logger.info("Running Maltiverse script")
-    logger.info("File location: %s", alert_file_location)
+    logger.info("Alerts file location: %s", alert_file_location)
     logger.debug("API Key: %s", api_key)
     logger.debug("Webhook: %s", hook_url)
 
