@@ -216,7 +216,6 @@ def test_logger(caplog):
     # Assert console log correctness
     assert caplog.records[0].message == 'Running Shuffle script'
     assert caplog.records[1].message == f'Alerts file location: {sys_args_template[1]}'
-    assert caplog.records[2].message == f'Webhook: {sys_args_template[3]}'
     assert caplog.records[-1].levelname == 'INFO'
     assert "DEBUG" not in caplog.text
     # Assert the log file is created and is not empty

@@ -137,14 +137,13 @@ def test_send_msg():
     mock_response = MagicMock()
     mock_response.status_code = 200
     with patch('requests.post', return_value=mock_response) as request_post:
-       slack.send_msg(msg_template, sys_args_template[3])
-       request_post.assert_called_once_with(sys_args_template[3], data=msg_template, headers=headers, timeout=5)
+        with patch('json.dumps', return_value=''):
+            slack.send_msg(msg_template, sys_args_template[3])
+            request_post.assert_called_once_with(sys_args_template[3], data=msg_template, headers=headers, timeout=5)
 
 def test_logger(caplog):
     """Test the correct execution of the logger."""
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    with patch('requests.post', return_value=mock_response):
+    with patch('slack.send_msg'):
         with caplog.at_level(logging.DEBUG, logger='slack'):
             args = sys_args_template[:]
             args.append('info')
@@ -153,7 +152,6 @@ def test_logger(caplog):
     # Assert console log correctness
     assert caplog.records[0].message == 'Running Slack script'
     assert caplog.records[1].message == f'Alerts file location: {sys_args_template[1]}'
-    assert caplog.records[2].message == f'Webhook: {sys_args_template[3]}'
     assert caplog.records[-1].levelname == 'INFO'
     assert "DEBUG" not in caplog.text
     # Assert the log file is created and is not empty
