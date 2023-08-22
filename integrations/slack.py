@@ -203,9 +203,14 @@ def send_msg(msg: str, url: str) -> None:
         logger.info("Message sent successfully")
     else:
         raise requests.HTTPError("Failed sending message", res.reason)
-    
-    logger.debug("Slack response: Date: %s, Status code: %d, URL: %s, Slack unique ID: %s",
-                 res.headers["date"], res.status_code, res.url, res.headers["x-slack-unique-id"])
+
+    resp_log = {
+        'date': res.headers['date'],
+        'status_code': res.status_code,
+        'url': res.url,
+        'slack_unique_id': res.headers['x-slack-unique-id']
+    }
+    logger.debug("Slack response: %s", json.dumps(resp_log))
 
 def get_json_alert(file_location: str) -> any:
     """Read JSON alert object from file.
