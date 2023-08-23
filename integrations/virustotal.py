@@ -9,7 +9,7 @@
 import json
 import sys
 import logging
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 from urllib.parse import urlparse
 import os
 import re
@@ -315,7 +315,7 @@ def setup_logger(args):
         os.makedirs(log_file_dir)
 
     consoleHandler = logging.StreamHandler()
-    fileHandler = RotatingFileHandler(LOG_FILE, maxBytes=10000000, backupCount=10)
+    fileHandler = TimedRotatingFileHandler(LOG_FILE, when='midnight', backupCount=31)
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%a %b %d %H:%M:%S %Z %Y")
     consoleHandler.setFormatter(formatter)
     fileHandler.setFormatter(formatter)
