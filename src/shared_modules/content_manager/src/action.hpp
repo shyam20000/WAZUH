@@ -67,7 +67,7 @@ public:
                         {
                             std::cerr << "Action: Request scheduling - Download in progress. "
                                          "The scheduling is ignored for "
-                                      << m_topicName << std::endl;
+                                      << m_topicName << std::endl; // LCOV_EXCL_LINE
                         }
                     }
                 }
@@ -94,6 +94,11 @@ public:
     void unregisterActionOnDemand()
     {
         OnDemandManager::instance().removeEndpoint(m_topicName);
+    }
+
+    void clearEndpointsActionOnDemand()
+    {
+        OnDemandManager::instance().clearEndpoints();
     }
 
     void runActionOnDemand()
